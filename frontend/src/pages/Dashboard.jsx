@@ -1,125 +1,82 @@
-import { useState } from "react";
-import axios from "axios";
-import Upload from "../components/Upload";
-import AuditPanel from "../components/AuditPanel";
-import SummaryStats from "../components/SummaryStats";
-import ChartPanel from "../components/ChartPanel";
-import InsightPanel from "../components/InsightPanel";
-import SchemaPanel from "../components/SchemaPanel";
+import { useEffect, useState } from 'react'
+import UploadSection from '../components/UploadSection'
+import SummaryCards from '../components/SummaryCards'
+import ChartsSection from '../components/ChartsSection'
+import InsightsFeed from '../components/InsightsFeed'
+import AnomalyPanel from '../components/AnomalyPanel'
+import './Dashboard.css'
 
 function Dashboard() {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisData, setAnalysisData] = useState(null);
-  const [loadingMessage, setLoadingMessage] = useState("");
-  const [error, setError] = useState("");
+  const [darkMode, setDarkMode] = useState(false)
+  const [dashboardData, setDashboardData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const hasAnomalies = dashboardData && dashboardData.anomalies.length > 0
 
-  const handleGenerate = async () => {
-    if (!selectedFile) return;
-
-    setIsAnalyzing(true);
-    setError("");
-    setLoadingMessage("Uploading and analyzing dataset...");
-
-    try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      const response = await axios.post(
-        "http://localhost:8000/analyze",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        }
-      );
-
-      if (response.data.error) {
-        setError(response.data.error);
-        setIsAnalyzing(false);
-        return;
-      }
-
-      setAnalysisData(response.data);
-      setIsAnalyzing(false);
-
-    } catch (err) {
-      setError("Server error. Please check backend.");
-      setIsAnalyzing(false);
-    }
-  };
+  useEffect(() => {
+    document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
 
   return (
-    <div className="app-container">
-      {analysisData === null ? (
-        <div className="hero-layout">
-
-          <div className="hero-left">
-            <h1 className="brand-main">NIRIKSHAN</h1>
-            <div className="hero-accent"></div>
-            <p className="hero-subtitle">
-              Observe. Analyze. Decide.
-            </p>
-            <p className="hero-description">
-              Transform raw datasets into structured,
-              decision-ready intelligence instantly.
-            </p>
+    <div className="dashboard-container">
+      <section className="hero">
+        <div className="hero-left">
+          <div className="hero-header-row">
+            <h1 className="brand-title">NIRIKSHAN</h1>
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={() => setDarkMode(!darkMode)}
+            >
+              {darkMode ? 'Light Mode' : 'Dark Mode'}
+            </button>
           </div>
-
-          <div className="hero-right">
-            <Upload onUpload={(file) => setSelectedFile(file)} />
-
-            {selectedFile && !isAnalyzing && (
-              <div className="action-card">
-                <div className="file-label">Selected File</div>
-                <div className="file-name">{selectedFile.name}</div>
-
-                <button
-                  className="generate-button"
-                  onClick={handleGenerate}
-                >
-                  Generate Analysis
-                </button>
-              </div>
-            )}
-
-            {isAnalyzing && (
-              <div className="loading-section">
-                <div className="spinner"></div>
-                <p>{loadingMessage}</p>
-              </div>
-            )}
-
-            {error && (
-              <div style={{ marginTop: "20px", color: "red" }}>
-                {error}
-              </div>
-            )}
-          </div>
+          <div className="hero-underline"></div>
+          <h2>Observe. Analyze. Decide.</h2>
+          <p>Transform raw datasets into structured, decision-ready intelligence instantly.</p>
         </div>
-      ) : (
-        <div className="dashboard-content">
 
-          <div className="top-row">
-            <AuditPanel data={analysisData} />
-            <SummaryStats data={analysisData} />
-          </div>
-
-          <SchemaPanel data={analysisData} />
-
-          <div className="chart-row">
-            <ChartPanel data={analysisData} />
-          </div>
-
-          <div className="insight-row">
-            <InsightPanel data={analysisData} />
-          </div>
-
+        <div className="hero-right">
+          <UploadSection
+            onDataLoaded={setDashboardData}
+            onUploadStart={() => setLoading(true)}
+            onUploadEnd={() => setLoading(false)}
+          />
         </div>
-      )}
+      </section>
+
+      {loading ? (
+        <div className="centered-state">
+          <p>Analyzing dataset...</p>
+        </div>
+      ) : dashboardData ? (
+        <div>
+          <section className="fade-in">
+            <h2 className="section-title">Summary</h2>
+            <SummaryCards summary={dashboardData.summary} />
+          </section>
+
+          <section className="charts-section fade-in">
+            <h2 className="section-title">Visual Insights</h2>
+            <ChartsSection charts={dashboardData.charts} />
+          </section>
+
+          <section className="fade-in">
+            <h2 className="section-title">Anomalies</h2>
+            <div className={hasAnomalies ? 'anomaly-card' : 'content-card'}>
+              <AnomalyPanel anomalies={dashboardData.anomalies} />
+            </div>
+          </section>
+
+          <section className="fade-in">
+            <h2 className="section-title">Insights</h2>
+            <div className="insight-card">
+              <InsightsFeed insights={dashboardData.insights} />
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
-  );
+  )
 }
 
-export default Dashboard;
+export default Dashboard
