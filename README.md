@@ -2,7 +2,7 @@
 
 Nirikshan is an intelligent CSV analysis web application that helps you observe, audit, and analyze datasets instantly.
 It performs automatic schema detection, data quality checks, anomaly detection, statistical summaries, and chart recommendations inside a clean, interactive dashboard.
-
+ 
 ## Home Page UI
 
 ![Nirikshan Home](frontend/Homepage%20UI/home.png)
